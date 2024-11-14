@@ -1,0 +1,176 @@
+[
+  {
+    "title": "Lecture 1 - Network Models",
+    "slides": [
+      {
+        "content": "Learning Objectives",
+        "notes": "After this topic, you will be able to: Understand the role of protocols in networking; Explain the reason for a layered architecture; Describe the OSI model in relation to layers, functions, protocols, and devices; Identify the five layers of the TCP/IP model."
+      },
+      {
+        "content": "Introduction to Protocols",
+        "notes": "Protocols define rules for communication. They dictate how data can be exchanged between devices and are maintained by organizations like IEEE and ANSI."
+      }
+    ],
+    "topics": [
+      {
+        "title": "Role of Protocols",
+        "keyPoints": [
+          "Protocols establish rules for data communication.",
+          "Protocols are logical and ensure smooth data exchange between devices."
+        ]
+      },
+      {
+        "title": "OSI and TCP/IP Models",
+        "keyPoints": [
+          "The OSI model provides a structured approach for designing network protocols.",
+          "TCP/IP has five layers, focusing on interoperability across various devices."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Lecture 2 - LAN Technologies",
+    "slides": [
+      {
+        "content": "Learning Objectives",
+        "notes": "By the end of this lesson you should be able to describe the IEEE standard project 802 and various LAN technologies."
+      },
+      {
+        "content": "IEEE 802 Family Of LAN Standards",
+        "notes": "Standards describe Layer 1 and 2 implementations, with subdivisions like LLC and MAC in the data link layer."
+      }
+    ],
+    "topics": [
+      {
+        "title": "IEEE Standards",
+        "keyPoints": [
+          "IEEE 802 standards define LAN implementations at OSI Layer 1 and 2.",
+          "IEEE subdivides data link layer into LLC and MAC sublayers."
+        ]
+      },
+      {
+        "title": "LAN Technologies",
+        "keyPoints": [
+          "Ethernet, Token ring, FDDI, and ATM are primary LAN technologies.",
+          "Each technology has unique specifications and use cases."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Lecture 3 - LAN Design",
+    "slides": [
+      {
+        "content": "Learning Objectives",
+        "notes": "You should be able to describe LAN infrastructure, network design, methodology, and understand layer 1, 2, and 3 design."
+      },
+      {
+        "content": "LAN Infrastructure",
+        "notes": "Network infrastructure includes physical and logical components for connectivity, security, and management."
+      }
+    ],
+    "topics": [
+      {
+        "title": "Physical Infrastructure",
+        "keyPoints": [
+          "Physical infrastructure involves cabling, routers, switches, hubs, and NICs.",
+          "It is fundamental to supporting connectivity and communication."
+        ]
+      },
+      {
+        "title": "Logical Infrastructure",
+        "keyPoints": [
+          "Logical infrastructure includes protocols, addressing, and server roles.",
+          "Essential for enabling network software components to interact."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Lecture 4 - Cabling Notes",
+    "slides": [
+      {
+        "content": "Learning Objectives",
+        "notes": "Identify general characteristics of physical media, primary cable types, and structured cabling components."
+      },
+      {
+        "content": "General Cable Characteristics",
+        "notes": "Important characteristics include bandwidth, length limits, and interference susceptibility."
+      }
+    ],
+    "topics": [
+      {
+        "title": "Cable Types",
+        "keyPoints": [
+          "Common types are coaxial, twisted-pair, and fiber-optic cables.",
+          "Each type has different interference and bandwidth capabilities."
+        ]
+      },
+      {
+        "title": "Structured Cabling",
+        "keyPoints": [
+          "Structured cabling is based on hierarchical designs and follows standards like TIA/EIA.",
+          "It supports efficient data transmission across network components."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Lecture 5 - Switching Techniques",
+    "slides": [
+      {
+        "content": "Learning Objectives",
+        "notes": "Describe switching techniques: circuit, message, and packet switching."
+      },
+      {
+        "content": "Introduction to Switching",
+        "notes": "Switching involves data transfer between nodes in large networks with multiple devices."
+      }
+    ],
+    "topics": [
+      {
+        "title": "Switching Techniques",
+        "keyPoints": [
+          "Circuit switching provides a dedicated path but is inefficient.",
+          "Message and packet switching allow data transfer without dedicated paths."
+        ]
+      },
+      {
+        "title": "Packet Switching",
+        "keyPoints": [
+          "Data is divided into packets, which are routed independently.",
+          "Efficient for data that can tolerate small delays, like web browsing."
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Lecture 6 - Wide Area Networks (WANs)",
+    "slides": [
+      {
+        "content": "Learning Objectives",
+        "notes": "Describe WAN characteristics, standards, and technologies."
+      },
+      {
+        "content": "WAN Standards",
+        "notes": "WAN standards operate at OSI layers 1 and 2, defining protocols for physical and data link layers."
+      }
+    ],
+    "topics": [
+      {
+        "title": "WAN Technologies",
+        "keyPoints": [
+          "WANs operate over large geographical areas using technologies like ISDN, Frame Relay, and ATM.",
+          "They connect multiple LANs through carrier networks."
+        ]
+      },
+      {
+        "title": "Types of WANs",
+        "keyPoints": [
+          "Switched WANs and point-to-point WANs are primary types.",
+          "Switched WANs provide connections between networks through intermediate nodes."
+        ]
+      }
+    ]
+  }
+]

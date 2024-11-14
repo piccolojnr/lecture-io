@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Lecture {
+  id         String      @id @default(cuid())
+  title      String
+  content    String?
+  status     String      @default("not_started")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  flashcards Flashcard[]
+  slides     Slide[]
+  topics     Topic[]
+}
+
+model Topic {
+  id        String      @id @default(cuid())
+  title     String
+  lectureId String
+  lecture   Lecture     @relation(fields: [lectureId], references: [id])
+  keyPoints keyPoints[]
+}
+
+model keyPoints {
+  id      String @id @default(cuid())
+  content String
+  topicId String
+  topic   Topic  @relation(fields: [topicId], references: [id])
+}
+
+model Slide {
+  id        String  @id @default(cuid())
+  content   String
+  lectureId String
+  lecture   Lecture @relation(fields: [lectureId], references: [id])
+}
+
+model Flashcard {
+  id           String   @id @default(cuid())
+  question     String
+  answer       String
+  confidence   Int      @default(1)
+  lastReviewed DateTime @default(now())
+  lectureId    String
+  lecture      Lecture  @relation(fields: [lectureId], references: [id])
+}

@@ -1,0 +1,29 @@
+{
+    "title": "Lecture 1 - Network Models",
+    "slides": [
+        {
+            "content": "Learning Objectives",
+            "notes": "After this topic, you will be able to: Understand the role of protocols in networking; Explain the reason for a layered architecture; Describe the OSI model in relation to layers, functions, protocols, and devices; Identify the five layers of the TCP/IP model."
+        },
+        {
+            "content": "Introduction to Protocols",
+            "notes": "Protocols define rules for communication. They dictate how data can be exchanged between devices and are maintained by organizations like IEEE and ANSI."
+        }
+    ],
+    "topics": [
+        {
+            "title": "Role of Protocols",
+            "keyPoints": [
+                "Protocols establish rules for data communication.",
+                "Protocols are logical and ensure smooth data exchange between devices."
+            ]
+        },
+        {
+            "title": "OSI and TCP/IP Models",
+            "keyPoints": [
+                "The OSI model provides a structured approach for designing network protocols.",
+                "TCP/IP has five layers, focusing on interoperability across various devices."
+            ]
+        }
+    ]
+}
