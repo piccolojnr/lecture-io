@@ -1,7 +1,8 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 const prisma = new PrismaClient();
+
 
 export default async function handler(
     req: NextApiRequest,
@@ -9,56 +10,149 @@ export default async function handler(
 ) {
     if (req.method === 'POST') {
         try {
-            const flashcards = req.body;
+            if (!req.body || typeof req.body !== 'object') {
+                return res.status(400).json({ error: 'Request body must be an object' });
+            }
 
-            const createdFlashcards = await Promise.all(
-                flashcards.map(async (flashcard: any) => {
-                    return prisma.flashcard.create({
-                        data: {
-                            question: flashcard.question,
-                            answer: flashcard.answer,
-                            confidence: flashcard.confidence,
-                            lastReviewed: flashcard.lastReviewed,
-                            lectureId: flashcard.lectureId,
-                        },
-                    });
-                })
-            );
+            const { flashcards, lectureId } = req.body;
 
-            res.status(200).json(createdFlashcards);
+            const lectureIdInt = parseInt(lectureId, 10);
+            if (isNaN(lectureIdInt)) {
+                return res.status(400).json({ error: 'Invalid lectureId, it must be a number.' });
+            }
+
+            if (!flashcards || !lectureId) {
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+
+
+
+            const data = [];
+            for (const flashcard of flashcards) {
+                const { question, answer, topic, additionalNotes } = flashcard;
+
+                if (!question || !answer || !topic) {
+                    return res.status(400).json({ error: "Each flashcard must have a question, answer, and topic." });
+                }
+                // Create or connect to the Topic
+                const topicRecord = await prisma.topic.upsert({
+                    where: { name: topic },
+                    update: {},
+                    create: { name: topic },
+                });
+
+                data.push({
+                    lectureId: lectureIdInt,
+                    question,
+                    answer,
+                    additionalNotes: additionalNotes ?? "",
+                    topicId: topicRecord.id,
+                    confidence: 0,
+                });
+            }
+            await prisma.flashcard.createMany({
+                data
+            });
+
+
+
+            res.status(200).json({ message: "Flashcards uploaded successfully.", data });
         } catch (error) {
-            console.error('Error creating flashcards:', error);
-            res.status(500).json({ error: 'Failed to create flashcards' });
+            console.error("Error uploading flashcards:", error);
+            res.status(500).json({ error: "Error uploading flashcards." });
         }
     }
     else if (req.method === 'GET') {
         try {
-            const { page = 1, pageSize = 10, lectureId } = req.query;
-            const skip = (Number(page) - 1) * Number(pageSize);
-            const take = Number(pageSize);
+            const { lectureId, topicId } = req.query;
 
-            const where = lectureId ? { lectureId: String(lectureId) } : {};
+            const lectureIdInt = parseInt(lectureId as string, 10);
+            if (isNaN(lectureIdInt)) {
+                return res.status(400).json({ error: 'Invalid lectureId, it must be a number.' });
+            }
 
-            const [flashcards, totalItems] = await Promise.all([
-                prisma.flashcard.findMany({
-                    where,
-                    skip,
-                    take,
-                    orderBy: {
-                        lastReviewed: 'asc'
+            const topicIdInt = parseInt(topicId as string, 10);
+            if (topicId && isNaN(topicIdInt)) {
+                return res.status(400).json({ error: 'Invalid topicId, it must be a number.' });
+            }
+
+            let where: any = {
+                lectureId: parseInt(lectureId as string),
+            };
+
+            if (topicId) {
+                where = {
+                    lectureId: parseInt(lectureId as string),
+                    topicId: parseInt(topicId as string)
+                };
+            }
+
+
+            const flashcards = await prisma.flashcard.findMany({
+                where,
+                include: {
+                    Topic: true,
+                    Lecture: true,
+                },
+            });
+            const uniqueTopics = await prisma.topic.findMany({
+                where: {
+                    flashcards: {
+                        some: {
+                            lectureId: parseInt(lectureId as string),
+                        },
                     },
-                }),
-                prisma.flashcard.count({ where })
-            ]);
+                },
+                select: {
+                    name: true,
+                    id: true,
+                },
+                distinct: ['name'],
+            });
 
-            const totalPages = Math.ceil(totalItems / take);
+
+            const topicsWithCompletion = await Promise.all(uniqueTopics.map(async (topic) => {
+                const topicFlashcards = await prisma.flashcard.findMany({
+                    where: {
+                        lectureId: parseInt(lectureId as string),
+                        topicId: topic.id,
+                    },
+                });
+
+                const totalFlashcards = topicFlashcards.length;
+
+                const valueOfEachFlashcard = 100 / totalFlashcards;
+
+                const percentageCompleted = topicFlashcards.reduce((acc, flashcard) => {
+                    return acc + (flashcard.confidence / 5) * valueOfEachFlashcard;
+                }, 0);
+                const roundedPercentage = Math.round(percentageCompleted);
+
+                const finalData = {
+                    name: topic.name,
+                    id: topic.id,
+                    percentageCompleted: roundedPercentage,
+                };
+                return finalData;
+            }));
+
+            const percentageCompleted = topicsWithCompletion.reduce((acc, topic) => acc + topic.percentageCompleted, 0) / topicsWithCompletion.length
+
+            const mostRecentlyViewedFlashcard = await prisma.flashcard.findFirst({
+                where,
+                orderBy: {
+                    lastReviewed: 'desc',
+                },
+            });
+
+
 
             res.status(200).json({
                 data: flashcards,
-                totalItems,
-                totalPages,
-                currentPage: Number(page),
-                pageSize: Number(pageSize),
+                topics: topicsWithCompletion,
+                percentageCompleted,
+                mostRecentlyViewedFlashcard
+
             });
         } catch (error) {
             console.error('Error fetching flashcards:', error);

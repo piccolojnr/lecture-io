@@ -1,13 +1,9 @@
 export interface Lecture {
-    id?: string;
+    id: string;
     title: string;
-    content?: string;
-    slides: Slide[];
-    topics: Topic[];
-    progress: number;
-    status: 'not_started' | 'in_progress' | 'understood' | 'review_needed';
+    flashcardsCount: number;
+    topicsCount: number;
 }
-
 export interface Slide {
     id?: string;
     content: string;

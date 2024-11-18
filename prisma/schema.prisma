@@ -7,46 +7,71 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model Flashcard {
+  id              Int       @id @default(autoincrement())
+  question        String
+  answer          String
+  topicId         Int
+  Topic           Topic     @relation(fields: [topicId], references: [id])
+  additionalNotes String?
+  confidence      Int       @default(0)
+  lastReviewed    DateTime?
+  lectureId       Int
+  Lecture         Lecture   @relation(fields: [lectureId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
 model Lecture {
-  id         String      @id @default(cuid())
+  id         Int         @id @default(autoincrement())
   title      String
-  content    String?
-  status     String      @default("not_started")
+  flashcards Flashcard[]
+  Quiz       Quiz[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
-  flashcards Flashcard[]
-  slides     Slide[]
-  topics     Topic[]
 }
 
 model Topic {
-  id        String      @id @default(cuid())
-  title     String
-  lectureId String
-  lecture   Lecture     @relation(fields: [lectureId], references: [id])
-  keyPoints keyPoints[]
+  id         Int         @id @default(autoincrement())
+  name       String      @unique
+  flashcards Flashcard[]
+  quizzes    Quiz[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
-model keyPoints {
-  id      String @id @default(cuid())
-  content String
-  topicId String
-  topic   Topic  @relation(fields: [topicId], references: [id])
+// [
+// {
+//     "question": "What is the primary function of an operating system?",
+//     "options": [
+//       "To manage software",
+//       "To manage hardware",
+//       "To manage users",
+//       "To manage networks"
+//     ],
+//     "correctAnswer": "To manage hardware",
+//     "topic": "Introduction to Operating System",
+//     "explanation": "The operating system's primary function is to manage the hardware carefully, in order to achieve the best possible performance."
+//   },
+// ]
+
+model Quiz {
+  id          Int      @id @default(autoincrement())
+  question    String
+  options     Option[]
+  topicId     Int
+  lectureId   Int
+  Topic       Topic    @relation(fields: [topicId], references: [id])
+  Lecture     Lecture  @relation(fields: [lectureId], references: [id])
+  explanation String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
-model Slide {
-  id        String  @id @default(cuid())
-  content   String
-  lectureId String
-  lecture   Lecture @relation(fields: [lectureId], references: [id])
-}
-
-model Flashcard {
-  id           String   @id @default(cuid())
-  question     String
-  answer       String
-  confidence   Int      @default(1)
-  lastReviewed DateTime @default(now())
-  lectureId    String
-  lecture      Lecture  @relation(fields: [lectureId], references: [id])
+model Option {
+  id      Int     @id @default(autoincrement())
+  value   String
+  quizId  Int
+  Quiz    Quiz    @relation(fields: [quizId], references: [id])
+  correct Boolean
 }

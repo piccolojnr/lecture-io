@@ -38,3 +38,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+*_output*.json
+*.pdf
+*.ppt
+*.pptx
+*.txt
+*.ipynb

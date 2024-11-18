@@ -2,7 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Add these classes for the card flip animation */
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #1a73e8;
+}
+
+* {
+  padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+}
+html {
+  width: 100vw;
+  margin: 0;
+}
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+a {
+  color: var(--primary);
+}
+
 .perspective-1000 {
   perspective: 1000px;
 }

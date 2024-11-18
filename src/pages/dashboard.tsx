@@ -1,12 +1,19 @@
-import LectureUploader from "../components/LectureUploader";
-import Link from "next/link";
 import Layout from "@/components/Layout";
-import { useLectures } from "@/contexts/LectureContext";
-import { useEffect } from "react";
+import { Lecture } from "@/types";
+import axios from "axios";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 
 export default function Dashboard() {
-  const { lectures, fetchLectures } = useLectures();
-
+  const [lectures, setLectures] = useState<Lecture[]>([]);
+  const fetchLectures = useCallback(async () => {
+    try {
+      const response = await axios.get("/api/lectures");
+      setLectures(response.data);
+    } catch (error) {
+      console.error("Error fetching lectures:", error);
+    }
+  }, []);
   useEffect(() => {
     fetchLectures();
   }, [fetchLectures]);
@@ -16,42 +23,51 @@ export default function Dashboard() {
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-gray-900">Study Dashboard</h1>
 
-        <LectureUploader />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lectures.data.map((lecture) => (
-            <Link
-              key={lecture.id}
-              href={`/lecture/${lecture.id}`}
-              className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-            >
-              <h2 className="text-xl font-semibold text-gray-800">
-                {lecture.title}
-              </h2>
-              <div className="mt-4">
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div
-                    className="bg-primary h-2.5 rounded-full"
-                    style={{ width: `${lecture.progress}%` }}
-                  ></div>
-                </div>
-                <p className="mt-2 text-sm text-gray-600">
-                  Progress: {lecture.progress}%
-                </p>
-              </div>
-              <span
-                className={`mt-4 inline-block px-3 py-1 rounded-full text-sm ${
-                  lecture.status === "understood"
-                    ? "bg-green-100 text-green-800"
-                    : lecture.status === "review_needed"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {lecture.status.replace("_", " ")}
-              </span>
-            </Link>
-          ))}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-semibold mb-4">Lectures</h2>
+          {lectures.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white">
+                <thead>
+                  <tr>
+                    <th className="py-2 px-4 border-b">ID</th>
+                    <th className="py-2 px-4 border-b">Lecture Title</th>
+                    <th className="py-2 px-4 border-b">Number of Flashcards</th>
+                    <th className="py-2 px-4 border-b">Number of Topics</th>
+                    <th className="py-2 px-4 border-b">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lectures.map((lecture) => (
+                    <tr key={lecture.id}>
+                      <td className="py-2 px-4 border-b text-center">
+                        {lecture.id}
+                      </td>
+                      <td className="py-2 px-4 border-b text-center">
+                        {lecture.title}
+                      </td>
+                      <td className="py-2 px-4 border-b text-center">
+                        {lecture.flashcardsCount}
+                      </td>
+                      <td className="py-2 px-4 border-b text-center">
+                        {lecture.topicsCount}
+                      </td>
+                      <td className="py-2 px-4 border-b text-center">
+                        <Link
+                          href={`/flashcards/${lecture.id}`}
+                          className="text-primary hover:text-primary/90"
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p>No lectures available.</p>
+          )}
         </div>
       </div>
     </Layout>
