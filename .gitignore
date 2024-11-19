@@ -44,3 +44,6 @@ next-env.d.ts
 *.pptx
 *.txt
 *.ipynb
+
+data/
+uploads/

@@ -397,4 +397,4 @@ const LectureFlashcards = () => {
   return <FlashcardContainer />;
 };
 
-export default LectureFlashcards;
+export default Flashcards;

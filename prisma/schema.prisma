@@ -3,32 +3,38 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model Flashcard {
   id              Int       @id @default(autoincrement())
   question        String
   answer          String
-  topicId         Int
-  Topic           Topic     @relation(fields: [topicId], references: [id])
   additionalNotes String?
-  confidence      Int       @default(0)
+  confidence      Int?      @default(0) // 0-5 scale for spaced repetition
   lastReviewed    DateTime?
+  nextReview      DateTime?
   lectureId       Int
-  Lecture         Lecture   @relation(fields: [lectureId], references: [id])
+  topicId         Int
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  Lecture         Lecture   @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  Topic           Topic     @relation(fields: [topicId], references: [id])
 }
 
 model Lecture {
-  id         Int         @id @default(autoincrement())
-  title      String
-  flashcards Flashcard[]
-  Quiz       Quiz[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id            Int             @id @default(autoincrement())
+  title         String
+  content       String
+  userId        String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  user          User            @relation(fields: [userId], references: [id])
+  flashcards    Flashcard[]
+  Quiz          Quiz[]
+  studySessions StudySession[]
+  progress      StudyProgress[]
 }
 
 model Topic {
@@ -40,32 +46,42 @@ model Topic {
   updatedAt  DateTime    @updatedAt
 }
 
-// [
-// {
-//     "question": "What is the primary function of an operating system?",
-//     "options": [
-//       "To manage software",
-//       "To manage hardware",
-//       "To manage users",
-//       "To manage networks"
-//     ],
-//     "correctAnswer": "To manage hardware",
-//     "topic": "Introduction to Operating System",
-//     "explanation": "The operating system's primary function is to manage the hardware carefully, in order to achieve the best possible performance."
-//   },
-// ]
-
 model Quiz {
+  id          Int            @id @default(autoincrement())
+  title       String
+  description String?
+  lectureId   Int
+  topicId     Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  Lecture     Lecture        @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  Topic       Topic          @relation(fields: [topicId], references: [id])
+  questions   QuizQuestion[]
+  attempts    QuizAttempt[]
+  options     Option[]
+}
+
+model QuizQuestion {
   id          Int      @id @default(autoincrement())
   question    String
-  options     Option[]
-  topicId     Int
-  lectureId   Int
-  Topic       Topic    @relation(fields: [topicId], references: [id])
-  Lecture     Lecture  @relation(fields: [lectureId], references: [id])
-  explanation String
+  options     String // JSON string array of options
+  answer      Int // Index of correct option
+  explanation String?
+  quizId      Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  Quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model QuizAttempt {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  quizId    Int
+  score     Int
+  answers   String // JSON string array of user answers
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
 
 model Option {
@@ -74,4 +90,80 @@ model Option {
   quizId  Int
   Quiz    Quiz    @relation(fields: [quizId], references: [id])
   correct Boolean
+}
+
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String?         @unique
+  emailVerified DateTime?
+  password      String
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  lectures      Lecture[]
+  studySessions StudySession[]
+  quizAttempts  QuizAttempt[]
+  progress      StudyProgress[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model StudySession {
+  userId    String
+  lectureId Int
+  duration  Int // Duration in seconds
+  type      String // "quiz", "flashcard", or "study"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lecture   Lecture  @relation(fields: [lectureId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@id([userId, lectureId, type]) // Composite primary key
+}
+
+model StudyProgress {
+  userId       String
+  lectureId    Int
+  flashcardIds Json // Array of mastered flashcard IDs
+  quizScores   Json // JSON object with quiz scores over time
+  lastStudied  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lecture      Lecture  @relation(fields: [lectureId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@id([userId, lectureId]) // Composite primary key
 }
