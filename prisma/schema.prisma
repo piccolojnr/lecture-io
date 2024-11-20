@@ -35,6 +35,9 @@ model Lecture {
   Quiz          Quiz[]
   studySessions StudySession[]
   progress      StudyProgress[]
+  notes         Note[]
+  mindMaps      MindMap[]
+  aiAssistantChats AIAssistantChat[]
 }
 
 model Topic {
@@ -105,6 +108,9 @@ model User {
   studySessions StudySession[]
   quizAttempts  QuizAttempt[]
   progress      StudyProgress[]
+  notes         Note[]
+  mindMaps      MindMap[]
+  aiAssistantChats AIAssistantChat[]
 }
 
 model Account {
@@ -166,4 +172,49 @@ model StudyProgress {
   user         User     @relation(fields: [userId], references: [id])
 
   @@id([userId, lectureId]) // Composite primary key
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  lectureId   Int
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lecture     Lecture  @relation(fields: [lectureId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([lectureId])
+  @@index([userId])
+}
+
+model MindMap {
+  id          String   @id @default(cuid())
+  title       String
+  nodes       Json
+  edges       Json
+  lectureId   Int
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lecture     Lecture  @relation(fields: [lectureId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([lectureId])
+  @@index([userId])
+}
+
+model AIAssistantChat {
+  id          String   @id @default(cuid())
+  messages    Json
+  lectureId   Int
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lecture     Lecture  @relation(fields: [lectureId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([lectureId])
+  @@index([userId])
 }

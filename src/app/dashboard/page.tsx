@@ -1,24 +1,24 @@
-import { getServerSession } from 'next-auth';
-import { redirect } from 'next/navigation';
-import { authOptions } from '../api/auth/[...nextauth]/route';
-import { prisma } from '@/lib/prisma';
-import FileUpload from '@/components/FileUpload';
-import Link from 'next/link';
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "../api/auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
+import FileUpload from "@/components/FileUpload";
+import Link from "next/link";
+import { DocumentProcessor } from "@/components/DocumentProcessor";
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email) {
-    redirect('/auth/signin');
+    redirect("/auth/signin");
   }
 
   const lectures = await prisma.lecture.findMany({
     where: {
-      // @ts-expect-error
       userId: session.user.id as string,
     },
     orderBy: {
-      createdAt: 'desc',
+      createdAt: "desc",
     },
     include: {
       _count: {
@@ -45,15 +45,24 @@ export default async function Dashboard() {
                   Upload your lecture notes to get started
                 </p>
               </div>
-              <div className="px-4 py-5 sm:p-6">
-                <FileUpload />
+              <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+                <div className="px-4 py-5 sm:px-6">
+                  <h2 className="text-lg font-medium text-gray-900">
+                    Document Processing
+                  </h2>
+                </div>
+                <div className="px-4 py-5 sm:p-6">
+                  <DocumentProcessor />
+                </div>
               </div>
             </div>
 
             {/* Lectures Section */}
             <div className="bg-white overflow-hidden shadow-sm rounded-lg">
               <div className="px-4 py-5 sm:px-6">
-                <h2 className="text-lg font-medium text-gray-900">Your Lectures</h2>
+                <h2 className="text-lg font-medium text-gray-900">
+                  Your Lectures
+                </h2>
                 <p className="mt-1 text-sm text-gray-500">
                   Manage and review your lecture notes
                 </p>
@@ -61,7 +70,8 @@ export default async function Dashboard() {
               <div className="px-4 py-5 sm:p-6">
                 {lectures.length === 0 ? (
                   <p className="text-center text-gray-500">
-                    No lectures yet. Upload your first lecture notes to get started!
+                    No lectures yet. Upload your first lecture notes to get
+                    started!
                   </p>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -88,6 +98,8 @@ export default async function Dashboard() {
                 )}
               </div>
             </div>
+
+            {/* Document Processing */}
           </div>
         </div>
       </div>

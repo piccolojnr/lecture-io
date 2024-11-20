@@ -4,6 +4,15 @@ export interface Lecture {
     flashcardsCount: number;
     topicsCount: number;
 }
+
+export interface ChatSession {
+    id: string;
+    title: string;
+    messages: any[];
+    lectureId: string;
+    createdAt: Date;
+}
+
 export interface Slide {
     id?: string;
     content: string;

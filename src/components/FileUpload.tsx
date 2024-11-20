@@ -1,88 +1,114 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useDropzone } from "react-dropzone";
-import { useRouter } from "next/navigation";
-import UploadIcon from "./icons/UploadIcon";
+import { useState } from "react";
 
-export default function FileUpload() {
-  const router = useRouter();
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface FileUploadProps {
+  onFileSelect: (file: File) => void;
+  setError: (error: string | null) => void;
+  setSelectedFile: (file: File | null) => void;
+  selectedFile: File | null;
+}
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return;
+export default function FileUpload({
+  onFileSelect,
+  setError,
+  setSelectedFile,
+  selectedFile,
+}: FileUploadProps) {
+  const [dragging, setDragging] = useState(false);
 
-    setIsUploading(true);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+
+    const files = e.dataTransfer.files;
+    handleFiles(files);
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      handleFiles(files);
+    }
+  };
+
+  const handleFiles = (files: FileList) => {
     setError(null);
 
-    try {
-      const formData = new FormData();
-      formData.append('files', acceptedFiles[0]);
+    if (files.length === 0) return;
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+    const file = files[0];
+    const allowedTypes = [
+      "application/pdf",
+      "text/plain",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "application/msword", // .doc
+    ];
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to upload file');
-      }
-
-      const data = await response.json();
-      router.refresh();
-      router.push(`/lectures/${data.lectureId}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload file');
-    } finally {
-      setIsUploading(false);
+    if (!allowedTypes.includes(file.type)) {
+      setError("Please upload a PDF, TXT, or Word document");
+      return;
     }
-  }, [router]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'application/pdf': ['.pdf'],
-      'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'text/plain': ['.txt'],
-    },
-    maxSize: 10 * 1024 * 1024, // 10MB
-    multiple: false,
-  });
+    setSelectedFile(file);
+    if (onFileSelect) {
+      onFileSelect(file);
+    }
+  };
 
   return (
-    <div className="space-y-4">
+    <div>
       <div
-        {...getRootProps()}
-        className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 ${
-          isDragActive ? "border-primary-500 bg-primary-50" : "border-gray-300"
-        } ${isUploading ? "pointer-events-none opacity-50" : ""}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`border-2 border-dashed rounded-lg p-6 text-center ${
+          dragging
+            ? "border-blue-500 bg-blue-50"
+            : "border-gray-300 hover:border-gray-400"
+        }`}
       >
-        <input {...getInputProps()} />
-        {isUploading ? (
-          <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            <p className="mt-2 text-sm text-gray-500">Uploading...</p>
-          </div>
-        ) : (
-          <>
-            <UploadIcon />
-            <p className="mb-2 text-sm text-gray-500">
-              <span className="font-semibold">Click to upload</span> or drag and drop
-            </p>
-            <p className="text-xs text-gray-500">
-              PDF, DOC, DOCX, or TXT (Max. 10MB)
-            </p>
-          </>
-        )}
+        <input
+          type="file"
+          onChange={handleFileInput}
+          accept=".pdf,.txt,.doc,.docx"
+          className="hidden"
+          id="file-upload"
+        />
+        <label
+          htmlFor="file-upload"
+          className="cursor-pointer text-blue-500 hover:text-blue-600"
+        >
+          {selectedFile ? (
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-gray-900">
+                {selectedFile.name}
+              </p>
+              <p className="text-xs text-gray-500">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <p>
+                Drop your file here or <span className="underline">browse</span>
+              </p>
+              <p className="text-sm text-gray-500">
+                Supports PDF, TXT, and Word documents
+              </p>
+            </div>
+          )}
+        </label>
       </div>
-      {error && (
-        <div className="p-4 text-sm text-red-800 rounded-lg bg-red-50">
-          {error}
-        </div>
-      )}
     </div>
   );
 }

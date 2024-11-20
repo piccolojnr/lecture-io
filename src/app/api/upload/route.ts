@@ -2,14 +2,13 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
-import { writeFile } from 'fs/promises';
+import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     // Check if user is authenticated
-    // @ts-expect-error user id not in type
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -50,14 +49,16 @@ export async function POST(req: Request) {
       );
     }
 
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'File size exceeds 10MB limit' },
+        { status: 400 }
+      );
+    }
+
     // Create uploads directory if it doesn't exist
     const uploadDir = join(process.cwd(), 'uploads');
-    try {
-      await writeFile(join(uploadDir, '.keep'), '');
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      // Directory already exists
-    }
+    await mkdir(uploadDir, { recursive: true });
 
     // Generate unique filename
     const fileName = `${Date.now()}-${file.name}`;
@@ -72,7 +73,6 @@ export async function POST(req: Request) {
     const lecture = await prisma.lecture.create({
       data: {
         title: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
-        // @ts-expect-error userId is not included in the lecture type
         userId: session.user.id,
         content: fileName,
       },
@@ -81,6 +81,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       message: 'File uploaded successfully',
       lectureId: lecture.id,
+      url: filePath
     }, { status: 201 });
   } catch (error) {
     console.error('Error uploading file:', error);
