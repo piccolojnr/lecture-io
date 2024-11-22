@@ -1,12 +1,11 @@
 import { getServerSession } from "next-auth";
 import { redirect, notFound } from "next/navigation";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/utils/authOptions";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
 interface LectureParams {
-  params: { lectureId: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ lectureId: string }>;
 }
 
 async function fetchLectureData(lectureId: number, userId: string) {

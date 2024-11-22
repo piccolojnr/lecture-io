@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from "@/utils/authOptions";
 import { prisma } from '@/lib/prisma';
 
 // Update a flashcard
 export async function PUT(
   req: Request,
-  { params }: { params: { lectureId: string; flashcardId: string } }
+  props: { params: Promise<{ lectureId: string; flashcardId: string }> }
 ) {
   try {
+    const params = await props.params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -20,7 +21,11 @@ export async function PUT(
     const flashcard = await prisma.flashcard.findUnique({
       where: { id: parseInt(params.flashcardId) },
       include: {
-        Lecture: true,
+        FlashcardSet: {
+          include: {
+            Lecture: true,
+          },
+        }
       },
     });
 
@@ -28,7 +33,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Flashcard not found' }, { status: 404 });
     }
 
-    if (flashcard.Lecture.userId !== session.user.id) {
+    if (flashcard.FlashcardSet.Lecture.userId !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -57,8 +62,9 @@ export async function PUT(
 // Delete a flashcard
 export async function DELETE(
   req: Request,
-  { params }: { params: { lectureId: string; flashcardId: string } }
+  props: { params: Promise<{ lectureId: string; flashcardId: string }> }
 ) {
+  const params = await props.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -69,7 +75,11 @@ export async function DELETE(
     const flashcard = await prisma.flashcard.findUnique({
       where: { id: parseInt(params.flashcardId) },
       include: {
-        Lecture: true,
+        FlashcardSet: {
+          include: {
+            Lecture: true,
+          },
+        }
       },
     });
 
@@ -77,7 +87,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Flashcard not found' }, { status: 404 });
     }
 
-    if (flashcard.Lecture.userId !== session.user.id) {
+    if (flashcard.FlashcardSet.Lecture.userId !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

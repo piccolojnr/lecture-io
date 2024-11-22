@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ChatSession, Message } from "@/types";
+import { ChatSession } from "@/types";
 
 interface UseAIChatProps {
   initialSession?: ChatSession;
@@ -7,7 +7,7 @@ interface UseAIChatProps {
 }
 
 interface UseAIChatReturn {
-  messages: Message[];
+  messages: any[];
   input: string;
   setInput: (value: string) => void;
   isLoading: boolean;
@@ -19,11 +19,11 @@ interface UseAIChatReturn {
 
 export function useAIChat({ initialSession, onSessionCreate }: UseAIChatProps): UseAIChatReturn {
   const [session, setSession] = useState<ChatSession | null>(initialSession || null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Use a ref to track if the component is mounted
   const isMounted = useRef(true);
 
@@ -36,7 +36,7 @@ export function useAIChat({ initialSession, onSessionCreate }: UseAIChatProps): 
   // Load messages when session changes
   useEffect(() => {
     if (session?.messages) {
-      setMessages(session.messages as Message[]);
+      setMessages(session.messages as any[]);
     }
   }, [session]);
 
@@ -62,7 +62,7 @@ export function useAIChat({ initialSession, onSessionCreate }: UseAIChatProps): 
       }
     }
 
-    const userMessage: Message = { role: "user", content: message };
+    const userMessage: any = { role: "user", content: message };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -80,7 +80,7 @@ export function useAIChat({ initialSession, onSessionCreate }: UseAIChatProps): 
       }
 
       const data = await response.json();
-      
+
       // Only update state if the component is still mounted
       if (isMounted.current) {
         setMessages((prev) => [

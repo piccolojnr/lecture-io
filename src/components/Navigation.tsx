@@ -2,7 +2,6 @@
 
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 
 export default function Navigation() {
@@ -10,7 +9,6 @@ export default function Navigation() {
   const [isStudyToolsOpen, setIsStudyToolsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const ref2 = useRef<HTMLDivElement>(null);
 
@@ -57,7 +55,9 @@ export default function Navigation() {
                 onClick={async (e: any) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  item.action && (await item.action());
+                  if (item.action) {
+                    await item.action();
+                  }
                 }}
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
               >

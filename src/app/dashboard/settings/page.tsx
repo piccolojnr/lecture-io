@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
   const [settings, setSettings] = useState({
     darkMode: false,
     notifications: true,

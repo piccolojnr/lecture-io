@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/utils/authOptions";
 import { prisma } from "@/lib/prisma";
 import PieChartPlot from "@/components/charts/PieChartPlot";
 import {

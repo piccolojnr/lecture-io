@@ -1,4 +1,4 @@
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/utils/authOptions";
 import BackButton from "@/components/BackButton";
 import FlashcardManager from "@/components/FlashcardManager";
 import { prisma } from "@/lib/prisma";
@@ -6,8 +6,7 @@ import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
 
 interface FlashcardParams {
-  params: { setId: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ setId: string }>;
 }
 
 async function fetchFlashcardData(flashcardId: number, userId: string) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateContent } from '@/lib/content-validator';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from "@/utils/authOptions";
 import { getServerSession } from 'next-auth';
 import { type PrismaClient } from '@prisma/client';
 

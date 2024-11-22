@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from "@/utils/authOptions";
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
 

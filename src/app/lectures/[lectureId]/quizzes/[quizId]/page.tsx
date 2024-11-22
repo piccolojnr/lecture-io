@@ -1,4 +1,4 @@
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/utils/authOptions";
 import BackButton from "@/components/BackButton";
 import QuizList from "@/components/QuizList";
 import { prisma } from "@/lib/prisma";
@@ -6,8 +6,7 @@ import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 interface QuizParams {
-  params: { quizId: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ quizId: string }>;
 }
 
 async function fetchQuizData(quizId: number, userId: string) {
