@@ -27,7 +27,6 @@ export async function POST(
       return new NextResponse('Lecture not found', { status: 404 });
     }
 
-    // @ts-expect-error - userId not in type
     if (lecture.userId !== session.user.id) {
       return new NextResponse('Unauthorized', { status: 401 });
     }

@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./api/auth/[...nextauth]/route";
 import SessionProvider from "@/providers/SessionProvider";
 import Navigation from "@/components/Navigation";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -31,10 +32,13 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <SessionProvider session={session}>
           <Navigation />
           <main>{children}</main>
+          <Toaster />
         </SessionProvider>
       </body>
     </html>

@@ -20,24 +20,26 @@ export default function AIAssistantContainer({ lectures }: Props) {
 
   // Load sessions on mount
   useEffect(() => {
+    const loadSessions = async () => {
+      try {
+        const response = await fetch("/api/ai-assistant/sessions");
+        if (!response.ok) {
+          throw new Error("Failed to load sessions");
+        }
+        const data = await response.json();
+        setSessions(data);
+      } catch (err: any) {
+        console.error(err);
+        setError(
+          "Failed to load chat sessions. Please try refreshing the page."
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadSessions();
   }, []);
-
-  const loadSessions = async () => {
-    try {
-      const response = await fetch("/api/ai-assistant/sessions");
-      if (!response.ok) {
-        throw new Error("Failed to load sessions");
-      }
-      const data = await response.json();
-      setSessions(data);
-    } catch (error: any) {
-      console.error(error);
-      setError("Failed to load chat sessions. Please try refreshing the page.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSessionCreate = useCallback(async (lectureId: number) => {
     try {
@@ -54,9 +56,9 @@ export default function AIAssistantContainer({ lectures }: Props) {
       const newSession = await response.json();
       setSessions((prev) => [newSession, ...prev]);
       setSelectedSession(newSession);
-    } catch (error) {
-      console.error(error);
-      throw new Error("Failed to create new session");
+    } catch (err) {
+      console.error(err);
+      setError("Failed to create a new session. Please try again.");
     }
   }, []);
 
@@ -67,7 +69,7 @@ export default function AIAssistantContainer({ lectures }: Props) {
   if (error) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ErrorDisplay message={error} retry={loadSessions} />
+        <ErrorDisplay message={error} retry={() => window.location.reload()} />
       </div>
     );
   }

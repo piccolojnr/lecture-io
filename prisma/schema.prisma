@@ -7,109 +7,156 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Flashcard {
-  id              Int       @id @default(autoincrement())
-  question        String
-  answer          String
-  additionalNotes String?
-  confidence      Int?      @default(0) // 0-5 scale for spaced repetition
-  lastReviewed    DateTime?
-  nextReview      DateTime?
-  lectureId       Int
-  topicId         Int
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  Lecture         Lecture   @relation(fields: [lectureId], references: [id], onDelete: Cascade)
-  Topic           Topic     @relation(fields: [topicId], references: [id])
-}
-
 model Lecture {
-  id            Int             @id @default(autoincrement())
-  title         String
-  content       String
-  userId        String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  user          User            @relation(fields: [userId], references: [id])
-  flashcards    Flashcard[]
-  Quiz          Quiz[]
-  studySessions StudySession[]
-  progress      StudyProgress[]
-  notes         Note[]
-  mindMaps      MindMap[]
+  id               Int               @id @default(autoincrement())
+  title            String
+  description      String?
+  userId           String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  user             User              @relation(fields: [userId], references: [id])
+  topics           Topic[]
+  Quizzes          Quiz[]
+  flashcardSets    FlashcardSet[]
+  studySessions    StudySession[]
+  progresses       StudyProgress[]
+  notes            Note[]
+  mindMaps         MindMap[]
   aiAssistantChats AIAssistantChat[]
+
+  @@unique([userId, title])
 }
 
 model Topic {
-  id         Int         @id @default(autoincrement())
-  name       String      @unique
-  flashcards Flashcard[]
-  quizzes    Quiz[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-}
-
-model Quiz {
-  id          Int            @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   title       String
   description String?
   lectureId   Int
-  topicId     Int
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  Lecture     Lecture        @relation(fields: [lectureId], references: [id], onDelete: Cascade)
-  Topic       Topic          @relation(fields: [topicId], references: [id])
-  questions   QuizQuestion[]
-  attempts    QuizAttempt[]
-  options     Option[]
+
+  flashcards Flashcard[]
+  quizzes    QuizQuestion[]
+  lecture    Lecture        @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([lectureId, title])
+}
+
+model FlashcardSet {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String?     @db.Text
+  lectureId   Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  Lecture     Lecture     @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  flashcards  Flashcard[]
+  quizzes     Quiz[]
+
+  @@index([lectureId, title])
+}
+
+model Flashcard {
+  id              Int          @id @default(autoincrement())
+  question        String       @db.Text
+  answer          String       @db.Text
+  additionalNotes String?
+  confidence      Int?         @default(0) // 0-5 scale for spaced repetition
+  lastReviewed    DateTime?
+  nextReview      DateTime?
+  topicId         Int
+  setId           Int
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  Topic           Topic        @relation(fields: [topicId], references: [id])
+  FlashcardSet    FlashcardSet @relation(fields: [setId], references: [id])
+
+  @@index([topicId, setId])
+}
+
+model Quiz {
+  id           Int            @id @default(autoincrement())
+  title        String
+  description  String?        @db.Text
+  lectureId    Int
+  setId        Int?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Lecture      Lecture        @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  flashcardSet FlashcardSet?  @relation(fields: [setId], references: [id])
+  questions    QuizQuestion[]
+  attempts     QuizAttempt[]
+
+  @@unique([lectureId, title])
 }
 
 model QuizQuestion {
-  id          Int      @id @default(autoincrement())
+  id          Int                @id @default(autoincrement())
   question    String
-  options     String // JSON string array of options
-  answer      Int // Index of correct option
-  explanation String?
+  options     QuizAnswerOption[] // One-to-many relation
+  explanation String?            @db.Text
   quizId      Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  Quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  topicId     Int
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  Quiz        Quiz               @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  Topic       Topic              @relation(fields: [topicId], references: [id])
+  QuizAnswer  QuizAnswer[]
+
+  @@unique([quizId, question])
 }
 
 model QuizAttempt {
-  id        Int      @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   userId    String
   quizId    Int
   score     Int
-  answers   String // JSON string array of user answers
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers   QuizAnswer[] // JSON string array of user answers
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id])
+  quiz      Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
 
-model Option {
-  id      Int     @id @default(autoincrement())
-  value   String
-  quizId  Int
-  Quiz    Quiz    @relation(fields: [quizId], references: [id])
-  correct Boolean
+model QuizAnswer {
+  id               Int              @id @default(autoincrement())
+  answerId         Int // Index of selected option
+  attemptId        Int
+  questionId       Int
+  selected         Int? // Index of selected option
+  QuizAttempt      QuizAttempt      @relation(fields: [attemptId], references: [id])
+  QuizQuestion     QuizQuestion     @relation(fields: [questionId], references: [id])
+  QuizAnswerOption QuizAnswerOption @relation(fields: [answerId], references: [id])
+
+  @@index([attemptId])
+  @@index([questionId])
+}
+
+model QuizAnswerOption {
+  id           Int          @id @default(autoincrement())
+  value        String
+  questionId   Int // Reference QuizQuestion
+  correct      Boolean
+  QuizQuestion QuizQuestion @relation(fields: [questionId], references: [id])
+  QuizAnswer   QuizAnswer[]
+
+  @@index([questionId])
 }
 
 model User {
-  id            String          @id @default(cuid())
-  name          String?
-  email         String?         @unique
-  emailVerified DateTime?
-  password      String
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  lectures      Lecture[]
-  studySessions StudySession[]
-  quizAttempts  QuizAttempt[]
-  progress      StudyProgress[]
-  notes         Note[]
-  mindMaps      MindMap[]
+  id               String            @id @default(cuid())
+  name             String?
+  email            String?           @unique
+  emailVerified    DateTime?
+  password         String
+  image            String?
+  accounts         Account[]
+  sessions         Session[]
+  lectures         Lecture[]
+  studySessions    StudySession[]
+  quizAttempts     QuizAttempt[]
+  progress         StudyProgress[]
+  notes            Note[]
+  mindMaps         MindMap[]
   aiAssistantChats AIAssistantChat[]
 }
 
@@ -175,45 +222,46 @@ model StudyProgress {
 }
 
 model Note {
-  id          String   @id @default(cuid())
-  title       String
-  content     String   @db.Text
-  lectureId   Int
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  lecture     Lecture  @relation(fields: [lectureId], references: [id])
-  user        User     @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  title     String   @default("Note")
+  content   String   @db.Text
+  lectureId Int
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lecture   Lecture  @relation(fields: [lectureId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([lectureId])
   @@index([userId])
 }
 
 model MindMap {
-  id          String   @id @default(cuid())
-  title       String
-  nodes       Json
-  edges       Json
-  lectureId   Int
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  lecture     Lecture  @relation(fields: [lectureId], references: [id])
-  user        User     @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  title     String   @default("Mind Map")
+  nodes     Json
+  edges     Json
+  lectureId Int
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lecture   Lecture  @relation(fields: [lectureId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([lectureId])
   @@index([userId])
 }
 
 model AIAssistantChat {
-  id          String   @id @default(cuid())
-  messages    Json
-  lectureId   Int
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  lecture     Lecture  @relation(fields: [lectureId], references: [id])
-  user        User     @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  title     String   @default("AI Assistant")
+  messages  Json
+  lectureId Int
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lecture   Lecture  @relation(fields: [lectureId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([lectureId])
   @@index([userId])

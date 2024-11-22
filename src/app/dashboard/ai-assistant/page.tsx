@@ -23,8 +23,8 @@ export default async function AIAssistantPage() {
       include: {
         _count: {
           select: {
-            flashcards: true,
-            Quiz: true,
+            flashcardSets: true,
+            Quizzes: true,
           },
         },
       },

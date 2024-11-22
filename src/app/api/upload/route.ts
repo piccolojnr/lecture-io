@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
-import { prisma } from '@/lib/prisma';
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 
@@ -22,14 +21,6 @@ export async function POST(req: Request) {
     if (!file) {
       return NextResponse.json(
         { error: 'No file uploaded' },
-        { status: 400 }
-      );
-    }
-
-    // Check file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'File size exceeds 10MB limit' },
         { status: 400 }
       );
     }
@@ -69,18 +60,10 @@ export async function POST(req: Request) {
     const filePath = join(uploadDir, fileName);
     await writeFile(filePath, buffer);
 
-    // Create lecture in database
-    const lecture = await prisma.lecture.create({
-      data: {
-        title: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
-        userId: session.user.id,
-        content: fileName,
-      },
-    });
+
 
     return NextResponse.json({
       message: 'File uploaded successfully',
-      lectureId: lecture.id,
       url: filePath
     }, { status: 201 });
   } catch (error) {

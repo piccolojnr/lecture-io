@@ -13,6 +13,15 @@ export interface ChatSession {
     createdAt: Date;
 }
 
+export interface ProcessingOptions {
+    title: string;
+    description: string;
+    type: "flashcard" | "quiz";
+    lectureId?: string;
+    createNewLecture: boolean;
+    lectureName?: string;
+}
+
 export interface Slide {
     id?: string;
     content: string;

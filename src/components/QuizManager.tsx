@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface QuizQuestion {
   question: string;
@@ -12,29 +12,31 @@ interface QuizQuestion {
 
 interface QuizManagerProps {
   lectureId: number;
-  topicId: number;
 }
 
-export default function QuizManager({ lectureId, topicId }: QuizManagerProps) {
+export default function QuizManager({ lectureId }: QuizManagerProps) {
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState({
-    question: '',
-    options: ['', '', '', ''],
+    question: "",
+    options: ["", "", "", ""],
     answer: 0,
-    explanation: '',
+    explanation: "",
   });
 
   const handleAddQuestion = () => {
-    if (currentQuestion.question && currentQuestion.options.every(opt => opt)) {
+    if (
+      currentQuestion.question &&
+      currentQuestion.options.every((opt) => opt)
+    ) {
       setQuestions([...questions, currentQuestion]);
       setCurrentQuestion({
-        question: '',
-        options: ['', '', '', ''],
+        question: "",
+        options: ["", "", "", ""],
         answer: 0,
-        explanation: '',
+        explanation: "",
       });
     }
   };
@@ -51,19 +53,18 @@ export default function QuizManager({ lectureId, topicId }: QuizManagerProps) {
 
     try {
       const response = await fetch(`/api/lectures/${lectureId}/quizzes`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           title,
           description,
-          topicId,
-          questions: questions.map(q => ({
+          questions: questions.map((q) => ({
             ...q,
             options: JSON.stringify(q.options),
           })),
-          options: questions.flatMap((q, qIndex) =>
+          options: questions.flatMap((q) =>
             q.options.map((opt, optIndex) => ({
               value: opt,
               correct: optIndex === q.answer,
@@ -73,15 +74,15 @@ export default function QuizManager({ lectureId, topicId }: QuizManagerProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create quiz');
+        throw new Error("Failed to create quiz");
       }
 
       router.refresh();
-      setTitle('');
-      setDescription('');
+      setTitle("");
+      setDescription("");
       setQuestions([]);
     } catch (error) {
-      console.error('Error creating quiz:', error);
+      console.error("Error creating quiz:", error);
     }
   };
 
@@ -90,7 +91,9 @@ export default function QuizManager({ lectureId, topicId }: QuizManagerProps) {
       <h2 className="text-2xl font-bold mb-4">Create Quiz</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Title</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Title
+          </label>
           <input
             type="text"
             value={title}
@@ -101,7 +104,9 @@ export default function QuizManager({ lectureId, topicId }: QuizManagerProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Description</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Description
+          </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -114,19 +119,26 @@ export default function QuizManager({ lectureId, topicId }: QuizManagerProps) {
           <h3 className="text-lg font-medium mb-2">Add Question</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Question</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Question
+              </label>
               <input
                 type="text"
                 value={currentQuestion.question}
                 onChange={(e) =>
-                  setCurrentQuestion({ ...currentQuestion, question: e.target.value })
+                  setCurrentQuestion({
+                    ...currentQuestion,
+                    question: e.target.value,
+                  })
                 }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Options</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Options
+              </label>
               {currentQuestion.options.map((option, index) => (
                 <div key={index} className="flex items-center mt-2">
                   <input

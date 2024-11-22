@@ -1,6 +1,7 @@
 import { ChatSession, Lecture } from "@/types";
 import { useEffect, useState } from "react";
 import ErrorDisplay from "./ErrorDisplay";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: "user" | "assistant";
@@ -126,7 +127,7 @@ export default function AIStudyAssistant({
                   : "bg-gray-100"
               }`}
             >
-              {message.content}
+              <ReactMarkdown>{message.content}</ReactMarkdown>
             </div>
           </div>
         ))}

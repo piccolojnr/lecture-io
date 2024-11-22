@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
-import FileUpload from "@/components/FileUpload";
 import Link from "next/link";
 import { DocumentProcessor } from "@/components/DocumentProcessor";
 
@@ -23,8 +22,8 @@ export default async function Dashboard() {
     include: {
       _count: {
         select: {
-          flashcards: true,
-          Quiz: true,
+          Quizzes: true,
+          flashcardSets: true,
         },
       },
     },
@@ -85,9 +84,11 @@ export default async function Dashboard() {
                           {lecture.title}
                         </h3>
                         <div className="mt-2 flex items-center text-sm text-gray-500 space-x-4">
-                          <span>{lecture._count.flashcards} flashcards</span>
+                          <span>
+                            {lecture._count.flashcardSets} flashcard sets
+                          </span>
                           <span>•</span>
-                          <span>{lecture._count.Quiz} quizzes</span>
+                          <span>{lecture._count.Quizzes} quizzes</span>
                         </div>
                         <time className="mt-2 block text-sm text-gray-500">
                           {new Date(lecture.createdAt).toLocaleDateString()}

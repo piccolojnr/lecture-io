@@ -33,8 +33,8 @@ export default function AISessionManager({
     try {
       await onSessionCreate(selectedLecture);
       setSelectedLecture(null);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       setError("Failed to create session. Please try again.");
     } finally {
       setIsCreating(false);

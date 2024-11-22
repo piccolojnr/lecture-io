@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-// import io from "socket.io-client";
 import PreviewIcon from "./icons/PreviewIcon";
 import EditIcon from "./icons/EditIcon";
 import SaveIcon from "./icons/SaveIcon";
@@ -13,46 +12,64 @@ interface Note {
   lastModified: Date;
 }
 
+interface Lecture {
+  id: string;
+  title: string;
+}
+
 interface NoteEditorProps {
   lectureId: string;
-  initialNote?: Note;
+  lectures: Lecture[];
+  selectedNote?: Note | null;
+  onSave: (note: Note) => void;
 }
 
 export default function NoteEditor({
   lectureId,
-  initialNote,
+  lectures,
+  selectedNote,
+  onSave,
 }: NoteEditorProps) {
   const [note, setNote] = useState<Note>({
-    id: initialNote?.id || "",
-    title: initialNote?.title || "Untitled Note",
-    content: initialNote?.content || "",
+    id: "",
+    title: "Untitled Note",
+    content: "",
     lectureId,
-    lastModified: initialNote?.lastModified || new Date(),
+    lastModified: new Date(),
   });
   const [isPreview, setIsPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  // const [socket, setSocket] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // useEffect(() => {
-  //   const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "", {
-  //     query: { lectureId },
-  //   });
-
-  //   newSocket.on("note-update", (updatedNote: Note) => {
-  //     if (updatedNote.id === note.id) {
-  //       setNote(updatedNote);
-  //     }
-  //   });
-
-  //   setSocket(newSocket);
-
-  //   return () => {
-  //     newSocket.close();
-  //   };
-  // }, [lectureId, note.id]);
+  useEffect(() => {
+    if (selectedNote) {
+      setNote(selectedNote);
+    } else {
+      setNote({
+        id: "",
+        title: "Untitled Note",
+        content: "",
+        lectureId,
+        lastModified: new Date(),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNote]);
 
   const saveNote = async () => {
+    if (!note.title.trim() || !note.content.trim()) {
+      setError("Title and content cannot be empty.");
+      return;
+    }
+
+    if (!note.lectureId) {
+      setError("Please select a lecture.");
+      return;
+    }
+
     setIsSaving(true);
+    setError(null);
+
     try {
       const response = await fetch("/api/notes", {
         method: note.id ? "PUT" : "POST",
@@ -60,14 +77,16 @@ export default function NoteEditor({
         body: JSON.stringify(note),
       });
 
+      if (!response.ok) {
+        throw new Error("Failed to save note");
+      }
+
       const savedNote = await response.json();
       setNote(savedNote);
-
-      // if (socket) {
-      //   socket.emit("note-change", savedNote);
-      // }
-    } catch (error) {
-      console.error("Failed to save note:", error);
+      onSave(savedNote);
+    } catch (err) {
+      console.error("Failed to save note:", err);
+      setError("Failed to save the note. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -111,7 +130,28 @@ export default function NoteEditor({
         </div>
       </div>
 
-      <div className="flex-1 p-4">
+      {error && (
+        <div className="p-4 text-red-500 text-sm">
+          <p>{error}</p>
+        </div>
+      )}
+
+      <div className="p-4">
+        {!selectedNote && (
+          <select
+            value={note.lectureId}
+            onChange={(e) => setNote({ ...note, lectureId: e.target.value })}
+            className="w-full mb-4 p-2 border rounded-lg"
+          >
+            <option value="">Select a lecture</option>
+            {lectures.map((lecture) => (
+              <option key={lecture.id} value={lecture.id}>
+                {lecture.title}
+              </option>
+            ))}
+          </select>
+        )}
+
         {isPreview ? (
           <div className="prose max-w-none">
             <ReactMarkdown>{note.content}</ReactMarkdown>
@@ -120,7 +160,7 @@ export default function NoteEditor({
           <textarea
             value={note.content}
             onChange={(e) => setNote({ ...note, content: e.target.value })}
-            className="w-full h-full p-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-[400px] p-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Start writing your notes here... (Markdown supported)"
           />
         )}

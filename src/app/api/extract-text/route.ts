@@ -3,9 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
-import path from 'path';
-import { } from 'fs/promises';
-import fs from 'fs';
 
 export async function POST(req: Request) {
   try {
@@ -14,42 +11,47 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { fileUrl } = await req.json();
 
-    if (!fileUrl) {
+    const formData = await req.formData();
+    const file = formData.get('files') as File;
+
+    if (!file) {
       return NextResponse.json(
-        { error: 'Missing file URL' },
+        { error: 'No file uploaded' },
         { status: 400 }
       );
     }
 
 
-    const absolutePath = path.resolve(fileUrl);
+    // Check file type
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+    ];
 
-    const exist = fs.existsSync(absolutePath);
-
-
-    if (!exist) {
+    if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
+        { error: 'Invalid file type' },
+        { status: 400 }
       );
     }
 
-    const buffer = fs.readFileSync(absolutePath);
-
-
-
-    if (buffer.length === 0) {
-      throw new Error('Buffer is empty. Unable to parse PDF.');
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'File size exceeds 10MB limit' },
+        { status: 400 }
+      );
     }
 
-    const fileType = fileUrl.split('.').pop()?.toLowerCase();
+    // Generate unique filename
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
+    const fileType = file.name.split('.').pop()?.toLowerCase();
 
     let extractedText = '';
-
-
 
     switch (fileType) {
       case 'pdf':

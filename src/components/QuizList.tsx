@@ -1,129 +1,175 @@
 "use client";
-import { useState, useEffect } from "react";
-import StudyTimer from "./StudyTimer";
 
-interface QuizListProps {
-  quizzes: any[];
-  lectureId: number;
+import { useState } from "react";
+import StudyTimer from "./StudyTimer";
+import { FlashcardSet, Lecture, QuizAnswerOption } from "@prisma/client";
+
+interface QuizQuestion {
+  id: number;
+  question: string;
+  explanation: string | null;
+  quizId: number;
+  topicId: number;
+  options: QuizAnswerOption[];
 }
 
-export default function QuizList({ quizzes, lectureId }: QuizListProps) {
-  const [currentQuiz, setCurrentQuiz] = useState<any>(null);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<number[]>([]);
-  const [score, setScore] = useState(0);
-  const [showResults, setShowResults] = useState(false);
-  const [progress, setProgress] = useState<any>(null);
+interface Quiz {
+  id: number;
+  title: string;
+  description: string;
+  questions: QuizQuestion[];
+  flashcardSet: FlashcardSet | null;
+  lectureId: number;
+  Lecture: Lecture;
+}
 
-  useEffect(() => {
-    // Fetch existing progress
-    fetch(`/api/progress?lectureId=${lectureId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setProgress(data);
-      });
-  }, [lectureId]);
+interface QuizListProps {
+  quiz: Quiz;
+}
 
-  const startQuiz = (quiz: any) => {
+export default function QuizList({ quiz }: QuizListProps) {
+  const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
+  const [quizState, setQuizState] = useState({
+    currentQuestion: 0,
+    answers: [] as { questionId: number; answerId: number }[],
+    score: 0,
+    showResults: false,
+  });
+
+  const startQuiz = (quiz: Quiz) => {
     setCurrentQuiz(quiz);
-    setCurrentQuestion(0);
-    setAnswers([]);
-    setScore(0);
-    setShowResults(false);
+    setQuizState({
+      currentQuestion: 0,
+      answers: [],
+      score: 0,
+      showResults: false,
+    });
   };
 
-  const handleAnswer = (optionIndex: number) => {
-    const newAnswers = [...answers, optionIndex];
-    setAnswers(newAnswers);
+  const handleAnswer = async (optionId: number) => {
+    if (!currentQuiz) return;
 
-    if (optionIndex === currentQuiz.questions[currentQuestion].answer) {
-      setScore(score + 1);
-    }
+    const option = currentQuiz.questions[
+      quizState.currentQuestion
+    ].options.find((opt) => opt.id === optionId);
 
-    if (currentQuestion + 1 < currentQuiz.questions.length) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      const finalScore =
-        score +
-        (optionIndex === currentQuiz.questions[currentQuestion].answer ? 1 : 0);
-      const percentage = (finalScore / currentQuiz.questions.length) * 100;
+    const isCorrect = option?.correct || false;
 
+    const updatedAnswers = [
+      ...quizState.answers,
+      {
+        answerId: optionId,
+        questionId: currentQuiz.questions[quizState.currentQuestion].id,
+      },
+    ];
+
+    const updatedScore = quizState.score + (isCorrect ? 1 : 0);
+    const isLastQuestion =
+      quizState.currentQuestion + 1 === currentQuiz.questions.length;
+
+    if (isLastQuestion) {
       // Update progress
-      const quizScores = progress?.quizScores
-        ? JSON.parse(progress.quizScores)
-        : {};
-      quizScores[new Date().toISOString()] = percentage;
+      await saveQuizAttempt();
 
-      fetch("/api/progress", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          lectureId,
-          type: "quiz",
-          data: JSON.stringify(quizScores),
-        }),
-      });
+      setQuizState((prevState) => ({
+        ...prevState,
+        answers: updatedAnswers,
+        score: updatedScore,
+        showResults: true,
+      }));
+    } else {
+      // Move to the next question
+      setQuizState((prevState) => ({
+        ...prevState,
+        answers: updatedAnswers,
+        score: updatedScore,
+        currentQuestion: prevState.currentQuestion + 1,
+      }));
+    }
+  };
 
-      setShowResults(true);
+  const saveQuizAttempt = async () => {
+    if (!currentQuiz) return;
+
+    try {
+      await fetch(
+        `/api/lectures/${currentQuiz.lectureId}/quizzes/${currentQuiz.id}/attempt`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            score: quizState.score,
+            answers: quizState.answers,
+          }),
+        }
+      );
+    } catch (error) {
+      console.error("Failed to save quiz attempt:", error);
     }
   };
 
   if (!currentQuiz) {
     return (
       <div className="space-y-4">
-        {quizzes.map((quiz) => (
-          <div key={quiz.id} className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold mb-2">{quiz.title}</h3>
-            <p className="text-gray-600 mb-4">
-              {quiz.description || `${quiz.questions.length} questions`}
-            </p>
-            <button
-              onClick={() => startQuiz(quiz)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-            >
-              Start Quiz
-            </button>
-          </div>
-        ))}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-xl font-semibold mb-2">{quiz.title}</h3>
+          <p className="text-gray-600 mb-4">
+            {quiz.description || `${quiz.questions.length} questions`}
+          </p>
+          <button
+            onClick={() => startQuiz(quiz)}
+            className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+          >
+            Start Quiz
+          </button>
+        </div>
       </div>
     );
   }
 
-  if (showResults) {
-    const percentage = (score / currentQuiz.questions.length) * 100;
+  if (quizState.showResults) {
+    const percentage = (quizState.score / currentQuiz.questions.length) * 100;
+
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-xl font-semibold mb-4">Quiz Results</h3>
         <p className="text-lg mb-2">
-          Score: {score}/{currentQuiz.questions.length} ({percentage.toFixed(1)}
-          %)
+          Score: {quizState.score}/{currentQuiz.questions.length} (
+          {percentage.toFixed(1)}%)
         </p>
         <div className="space-y-4 mb-4">
-          {currentQuiz.questions.map((question: any, index: number) => (
-            <div
-              key={index}
-              className={`p-4 rounded ${
-                answers[index] === question.answer
-                  ? "bg-green-100"
-                  : "bg-red-100"
-              }`}
-            >
-              <p className="font-medium mb-2">{question.question}</p>
-              <p className="text-sm">
-                Your answer: {JSON.parse(question.options)[answers[index]]}
-              </p>
-              <p className="text-sm">
-                Correct answer: {JSON.parse(question.options)[question.answer]}
-              </p>
-              {question.explanation && (
-                <p className="text-sm text-gray-600 mt-2">
-                  {question.explanation}
+          {currentQuiz.questions.map((question, index) => {
+            const userAnswer = quizState.answers[index];
+            const answerOption = question.options.find(
+              (option) => option.correct
+            ) || { id: -1 };
+            const isCorrect = userAnswer.answerId === answerOption.id;
+
+            return (
+              <div
+                key={index}
+                className={`p-4 rounded ${
+                  isCorrect ? "bg-green-100" : "bg-red-100"
+                }`}
+              >
+                <p className="font-medium mb-2">{question.question}</p>
+                <p className="text-sm">
+                  Your answer:{" "}
+                  {question.options.find((x) => x.id === userAnswer.answerId)
+                    ?.value || "N/A"}
                 </p>
-              )}
-            </div>
-          ))}
+                <p className="text-sm">
+                  Correct answer:{" "}
+                  {question.options.find((x) => x.correct)?.value}
+                </p>
+                {question.explanation && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    {question.explanation}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div className="flex justify-between">
           <button
@@ -132,6 +178,7 @@ export default function QuizList({ quizzes, lectureId }: QuizListProps) {
           >
             Back to Quizzes
           </button>
+
           <button
             onClick={() => startQuiz(currentQuiz)}
             className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
@@ -143,36 +190,38 @@ export default function QuizList({ quizzes, lectureId }: QuizListProps) {
     );
   }
 
-  const question = currentQuiz.questions[currentQuestion];
-  const options = JSON.parse(question.options);
+  const currentQuestion = currentQuiz.questions[quizState.currentQuestion];
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <StudyTimer lectureId={lectureId} type="quiz" />
+      <StudyTimer lectureId={currentQuiz.lectureId} type="quiz" />
       <div className="mb-4">
         <p className="text-sm text-gray-600">
-          Question {currentQuestion + 1} of {currentQuiz.questions.length}
+          Question {quizState.currentQuestion + 1} of{" "}
+          {currentQuiz.questions.length}
         </p>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
             className="bg-indigo-600 h-2 rounded-full"
             style={{
               width: `${
-                ((currentQuestion + 1) / currentQuiz.questions.length) * 100
+                ((quizState.currentQuestion + 1) /
+                  currentQuiz.questions.length) *
+                100
               }%`,
             }}
           />
         </div>
       </div>
-      <h3 className="text-xl font-semibold mb-4">{question.question}</h3>
+      <h3 className="text-xl font-semibold mb-4">{currentQuestion.question}</h3>
       <div className="space-y-2">
-        {options.map((option: string, index: number) => (
+        {currentQuestion.options.map((option, index) => (
           <button
             key={index}
-            onClick={() => handleAnswer(index)}
+            onClick={() => handleAnswer(option.id)}
             className="w-full text-left p-4 rounded border hover:bg-gray-50"
           >
-            {option}
+            {option.value}
           </button>
         ))}
       </div>

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { HfInference } from "@huggingface/inference";
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
 
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+
+if (!GROQ_API_KEY) {
+  throw new Error("GROQ_API_KEY is not set in environment variables.");
+}
 
 export async function POST(req: Request) {
   try {
@@ -22,7 +26,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get the chat session and its messages
+    // Retrieve the chat session
     const chatSession = await prisma.aIAssistantChat.findUnique({
       where: {
         id: sessionId,
@@ -37,62 +41,71 @@ export async function POST(req: Request) {
       );
     }
 
-    // Prepare context from previous messages
+    // Prepare context for AI from the last 5 messages
     const messages = chatSession.messages as any[];
     const context = messages
-      .slice(-5) // Use last 5 messages for context
-      .map((m) => `${m.role}: ${m.content}`)
-      .join("\n");
+      .slice(-5)
+      .map((m) => ({ role: m.role, content: m.content }));
 
-    if (!process.env.HUGGINGFACE_API_KEY) {
-      return NextResponse.json(
-        { error: "AI service is not configured properly" },
-        { status: 503 }
-      );
-    }
+    // Add the user's current message to the context
+    context.push({ role: "user", content: message });
 
-    // Generate AI response
-    try {
-      const aiResponse = await hf.textGeneration({
-        model: "t5-large",
-        inputs: `${context}\nUser: ${message}\nAssistant:`,
-        parameters: {
-          max_length: 200,
-          temperature: 0.7,
-        },
-      });
+    // Call Groq API for AI response
+    const response = await fetch(GROQ_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-70b-versatile",
+        messages: [
+          { role: "system", content: "You are a helpful educational content generator." },
+          ...context,
+        ],
+        max_tokens: 2000,
+        temperature: 0.7,
+      }),
+    });
 
-      if (!aiResponse.generated_text) {
-        throw new Error("No response generated");
-      }
-
-      // Update chat session with new messages
-      const updatedMessages = [
-        ...messages,
-        { role: "user", content: message },
-        { role: "assistant", content: aiResponse.generated_text },
-      ];
-
-      await prisma.aIAssistantChat.update({
-        where: {
-          id: sessionId,
-        },
-        data: {
-          messages: updatedMessages,
-        },
-      });
-
-      return NextResponse.json({
-        response: aiResponse.generated_text,
-        messages: updatedMessages,
-      });
-    } catch (error) {
-      console.error("AI Generation Error:", error);
+    if (!response.ok) {
+      console.error("Groq API Error:", await response.text());
       return NextResponse.json(
         { error: "Failed to generate AI response. Please try again." },
         { status: 503 }
       );
     }
+
+    const aiResponse = await response.json();
+    const assistantMessage = aiResponse.choices?.[0]?.message?.content;
+
+    if (!assistantMessage) {
+      return NextResponse.json(
+        { error: "No response generated from AI" },
+        { status: 503 }
+      );
+    }
+
+    // Update chat session with new messages
+    const updatedMessages = [
+      ...messages,
+      { role: "user", content: message },
+      { role: "assistant", content: assistantMessage },
+    ];
+
+    await prisma.aIAssistantChat.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        messages: updatedMessages,
+      },
+    });
+
+    return NextResponse.json({
+      response: assistantMessage,
+      messages: updatedMessages,
+    });
   } catch (error) {
     console.error("AI Assistant Error:", error);
     return NextResponse.json(
