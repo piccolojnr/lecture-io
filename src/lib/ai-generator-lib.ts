@@ -165,7 +165,6 @@ export async function processChunkWithAI(
         // Parse and validate the content
         try {
             const parsedContent = JSON.parse(content);
-            console.log('Generated content:', parsedContent);
             if (!Array.isArray(parsedContent)) {
                 return parsedContent[type === 'quiz' ? 'quizzes' : 'flashcards'];
             }

@@ -73,11 +73,10 @@ export async function POST(req: Request) {
     const uniqueTopics
       = [...new Set(content.map((item: any) => item.topic))];
     const topics: Record<string, number> = {};
+    let parsedLectureId;
 
     await prisma.$transaction(async (prisma) => {
-
-      let parsedLectureId = !newLecture && lectureId ? parseInt(lectureId, 10) : null;
-
+      parsedLectureId = !newLecture && lectureId ? parseInt(lectureId, 10) : null;
       if (newLecture) {
         const newLectureId = await prisma.lecture.upsert({
           where: {
@@ -185,7 +184,7 @@ export async function POST(req: Request) {
 
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, lectureId: parsedLectureId });
   } catch (error: any) {
     console.error('Error saving content:', error.message);
     return NextResponse.json(

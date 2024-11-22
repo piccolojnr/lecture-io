@@ -197,13 +197,17 @@ export function ContentGenerator({
           throw new Error("Failed to save content");
         }
 
+        const data = await response.json();
+
+        const lectureId = data.lectureId;
+
         toast.success("Content saved successfully!");
         setSuccess("Content saved successfully!");
         setShowPreview(false);
         setResults(null);
 
         // Redirect to lecture page
-        router.push(`/lectures/${options.lectureId || "new"}`);
+        router.push(`/lectures/${lectureId || "new"}`);
       } catch (error) {
         console.error("Error saving content:", error);
 

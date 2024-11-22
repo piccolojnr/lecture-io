@@ -25,7 +25,6 @@ export async function POST(req: Request) {
     for (let i = 0; i < chunks.length; i++) {
       try {
         const result = await processChunkWithAI(chunks[i], type, apiKey);
-        console.log(`Processed chunk ${result}`);
         results.push(...result);
       } catch (error) {
         console.error(`Failed to process chunk ${i}:`, error);
