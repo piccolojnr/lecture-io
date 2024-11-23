@@ -3,24 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { validateContent } from '@/lib/content-validator';
 import { authOptions } from "@/utils/authOptions";
 import { getServerSession } from 'next-auth';
-import { type PrismaClient } from '@prisma/client';
 
 
-async function getOrCreateTopic(prisma: PrismaClient, title: string, lectureId: number) {
-  const existingTopic = await prisma.topic.findFirst({
-    where: { title, lectureId },
-  });
-
-  if (existingTopic) {
-    return existingTopic.id;
-  }
-
-  const newTopic = await prisma.topic.create({
-    data: { title, lectureId },
-  });
-
-  return newTopic.id;
-}
 
 
 export async function POST(req: Request) {
@@ -107,7 +91,22 @@ export async function POST(req: Request) {
 
 
       for (const topic of uniqueTopics) {
-        topics[topic as string] = await getOrCreateTopic(prisma as any, topic as string, parsedLectureId);
+        const title = topic as string;
+        const lectureId = parsedLectureId;
+
+        const existingTopic = await prisma.topic.findFirst({
+          where: { title, lectureId },
+        });
+
+        if (existingTopic) {
+          return existingTopic.id;
+        }
+
+        const newTopic = await prisma.topic.create({
+          data: { title, lectureId },
+        });
+
+        topics[title] = newTopic.id;
       }
 
 
