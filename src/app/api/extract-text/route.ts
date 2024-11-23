@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/utils/authOptions";
-import pdf from 'pdf-parse';
+import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
+
+import path from 'path';
+
+
+import { pathToFileURL } from 'url';
+
+const pdfjsWorkerPath = pathToFileURL(path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'build', 'pdf.worker.min.mjs')).href;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerPath;
+
+// pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
 
 export async function POST(req: Request) {
   try {
@@ -55,8 +65,13 @@ export async function POST(req: Request) {
 
     switch (fileType) {
       case 'pdf':
-        const pdfData = await pdf(buffer);
-        extractedText = pdfData.text;
+        const uint8Array = new Uint8Array(buffer);
+        const pdfDoc = await pdfjs.getDocument(uint8Array).promise;
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const textContent = await page.getTextContent();
+          extractedText += textContent.items.map((item: any) => item.str).join(' ');
+        }
         break;
 
       case 'docx':
