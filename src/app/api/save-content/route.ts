@@ -59,129 +59,127 @@ export async function POST(req: Request) {
     const topics: Record<string, number> = {};
     let parsedLectureId;
 
-    await prisma.$transaction(async (prisma) => {
-      parsedLectureId = !newLecture && lectureId ? parseInt(lectureId, 10) : null;
-      if (newLecture) {
-        const newLectureId = await prisma.lecture.upsert({
-          where: {
-            userId_title: {
-              userId: session.user.id,
-              title: newLecture.title
-            }
-          },
-          create: {
-            title: newLecture.title,
-            description: newLecture.description,
-            userId: session.user.id
-          },
-          update: {
+    parsedLectureId = !newLecture && lectureId ? parseInt(lectureId, 10) : null;
+    if (newLecture) {
+      const newLectureId = await prisma.lecture.upsert({
+        where: {
+          userId_title: {
+            userId: session.user.id,
+            title: newLecture.title
           }
-        });
+        },
+        create: {
+          title: newLecture.title,
+          description: newLecture.description,
+          userId: session.user.id
+        },
+        update: {
+        }
+      });
 
-        parsedLectureId = newLectureId.id;
+      parsedLectureId = newLectureId.id;
+    }
+
+    if (!parsedLectureId) {
+      return NextResponse.json(
+        { error: 'Invalid lectureId' },
+        { status: 400 }
+      );
+    }
+
+
+
+    for (const topic of uniqueTopics) {
+      const title = topic as string;
+      const lectureId = parsedLectureId;
+
+      const existingTopic = await prisma.topic.findFirst({
+        where: { title, lectureId },
+      });
+
+      if (existingTopic) {
+        topics[title] = existingTopic.id;
       }
 
-      if (!parsedLectureId) {
+      const newTopic = await prisma.topic.create({
+        data: { title, lectureId },
+      });
+
+      topics[title] = newTopic.id;
+    }
+
+
+    if (type === 'quiz') {
+      const existingQuiz = await prisma.quiz.findFirst({
+        where: { title, lectureId: parsedLectureId },
+      });
+
+      if (existingQuiz) {
         return NextResponse.json(
-          { error: 'Invalid lectureId' },
+          { error: 'Quiz with the same title already exists' },
           { status: 400 }
         );
       }
 
 
+      await prisma.quiz.create({
+        data: {
+          title, description,
+          lectureId: parsedLectureId,
+          questions: {
+            create: content.map((question: any) => ({
+              question: question.question,
+              explanation: question.explanation || null,
+              options: {
+                create: question.options.map((option: any) => ({
+                  value: option,
+                  correct: option === question.correctAnswer,
+                })),
+              },
+              topicId: topics[question.topic],
+            })
+            )
+          }
+        },
+      });
 
-      for (const topic of uniqueTopics) {
-        const title = topic as string;
-        const lectureId = parsedLectureId;
+    } else if (type === 'flashcard') {
+      const existingSet = await prisma.flashcardSet.findFirst({
+        where: { title, lectureId: parsedLectureId },
+      });
 
-        const existingTopic = await prisma.topic.findFirst({
-          where: { title, lectureId },
-        });
-
-        if (existingTopic) {
-          return existingTopic.id;
-        }
-
-        const newTopic = await prisma.topic.create({
-          data: { title, lectureId },
-        });
-
-        topics[title] = newTopic.id;
-      }
-
-
-      if (type === 'quiz') {
-        const existingQuiz = await prisma.quiz.findFirst({
-          where: { title, lectureId: parsedLectureId },
-        });
-
-        if (existingQuiz) {
-          return NextResponse.json(
-            { error: 'Quiz with the same title already exists' },
-            { status: 400 }
-          );
-        }
-
-
-        await prisma.quiz.create({
-          data: {
-            title, description,
-            lectureId: parsedLectureId,
-            questions: {
-              create: content.map((question: any) => ({
-                question: question.question,
-                explanation: question.explanation || null,
-                options: {
-                  create: question.options.map((option: any) => ({
-                    value: option,
-                    correct: option === question.correctAnswer,
-                  })),
-                },
-                topicId: topics[question.topic],
-              })
-              )
-            }
-          },
-        });
-
-      } else if (type === 'flashcard') {
-        const existingSet = await prisma.flashcardSet.findFirst({
-          where: { title, lectureId: parsedLectureId },
-        });
-
-        if (existingSet) {
-          return NextResponse.json(
-            { error: 'Flashcard set with the same title already exists' },
-            { status: 400 }
-          );
-        }
-
-        await prisma.flashcardSet.create({
-          data: {
-            title,
-            description,
-            lectureId: parsedLectureId,
-            flashcards: {
-              create: content.map((card: any) => ({
-                question: card.question,
-                answer: card.answer,
-                additionalNotes: card.additionalNotes || null,
-                topicId: topics[card.topic],
-                confidence: 0,
-                lastReviewed: null,
-                nextReview: null,
-              })),
-            },
-          },
-        });
-      } else {
+      if (existingSet) {
         return NextResponse.json(
-          { error: 'Invalid content type' },
+          { error: 'Flashcard set with the same title already exists' },
           { status: 400 }
         );
       }
 
-    });
+      await prisma.flashcardSet.create({
+        data: {
+          title,
+          description,
+          lectureId: parsedLectureId,
+          flashcards: {
+            create: content.map((card: any) => ({
+              question: card.question,
+              answer: card.answer,
+              additionalNotes: card.additionalNotes || null,
+              topicId: topics[card.topic],
+              confidence: 0,
+              lastReviewed: null,
+              nextReview: null,
+            })),
+          },
+        },
+      });
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid content type' },
+        { status: 400 }
+      );
+    }
+
 
     return NextResponse.json({ success: true, lectureId: parsedLectureId });
   } catch (error: any) {
