@@ -52,6 +52,10 @@ export function DocumentProcessor() {
     }
   };
 
+  const handleTextInput = (text: string) => {
+    setExtractedText(text);
+  };
+
   return (
     <div className="space-y-6 p-6 bg-white rounded-lg shadow">
       <div className="space-y-4">
@@ -63,6 +67,7 @@ export function DocumentProcessor() {
             Upload Document
           </label>
           <FileUpload
+            onTextInput={handleTextInput}
             onFileSelect={handleFileSelect}
             setError={setError}
             setSelectedFile={setSelectedFile}
@@ -77,9 +82,12 @@ export function DocumentProcessor() {
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Extracted Text Preview
               </h3>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap max-h-60 overflow-y-auto">
-                {extractedText}
-              </p>
+              <textarea
+                className="w-full text-sm text-gray-600 whitespace-pre-wrap max-h-60 overflow-y-auto p-2 border border-gray-300 rounded-md"
+                value={extractedText}
+                rows={15}
+                onChange={(e) => setExtractedText(e.target.value)}
+              />
             </div>
 
             <ContentGenerator

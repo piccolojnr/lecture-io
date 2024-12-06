@@ -11,7 +11,8 @@ export const RETRY_CONFIG = {
 export const quizPrompt = (chunk: string) => `
 Convert the following text into a set of quiz questions in JSON format using the structure strictly as specified below. 
 You must not deviate from the format. Make sure to include all relevant information from the provided text that pertains 
-to the lecture (e.g., key points, concepts, and examples).
+to the lecture (e.g., key points, concepts, examples, and mathematical equations). If the chunk is empty or only lists topics, 
+generate quiz questions using those topics as guidance.
 
 The quiz format is as follows:
 
@@ -26,14 +27,18 @@ The quiz format is as follows:
 ]
 
 Instructions for Quiz Generation:
-1. Each quiz question should be phrased clearly and relate to key concepts from the lecture.
+1. Each quiz question should be phrased clearly and relate to key concepts, examples, or mathematical problems from the lecture.
 2. Provide four answer options for each question, one of which should be the correct answer.
 3. The correctAnswer field should indicate the correct option.
 4. Topic should reflect the general area that the question covers.
-5. Explanation is optional but recommended for complex topics.
-6. Strictly use the given format without deviating from it.
-7. Explanation must not exceed 500 characters.
-8. Topic must be at least 2 characters long.
+5. Explanation is optional but recommended for complex topics or math problems.
+6. If mathematical content is included, format equations properly using LaTeX syntax (e.g., \\( a^2 + b^2 = c^2 \\)).
+7. If the chunk is empty or only lists topics, create questions covering core aspects or key points related to those topics.
+8. Strictly use the given format without deviating from it.
+9. Explanation must not exceed 500 characters.
+10. Topic must be at least 2 characters long.
+11. If mathematical content is included, add a lot of solved examples.
+12. Try to cover every thing in the chunk if possible and meet the requirements.
 
 Text Chunk:
 
@@ -42,7 +47,8 @@ ${chunk}`;
 export const flashcardPrompt = (chunk: string) => `
 Convert the following text into a set of flashcards in JSON format using the structure strictly as specified below. 
 You must not deviate from the format. Make sure to include all relevant information from the provided text that pertains 
-to the lecture (e.g., key points, concepts, and examples).
+to the lecture (e.g., key points, concepts, examples, and mathematical equations). If the chunk is empty or only lists topics, 
+generate flashcards based on those topics.
 
 The flashcard format is as follows:
 
@@ -58,11 +64,17 @@ The flashcard format is as follows:
 Instructions for Flashcard Generation:
 1. Each flashcard should contain a clear question and comprehensive answer.
 2. Topic should reflect the general area covered.
-3. AdditionalNotes can include examples or clarifications.
-4. Break down complex topics into multiple flashcards for clarity.
-5. Strictly use the given format without deviating from it.
-6. Additional notes must not exceed 500 characters.
-7. Topic must be at least 2 characters long.
+3. AdditionalNotes can include examples, clarifications, or mathematical equations formatted in LaTeX syntax (e.g., \\( E = mc^2 \\)).
+4. Break down complex topics or math problems into multiple flashcards for clarity.
+5. If the chunk is empty or only lists topics, create flashcards that provide foundational understanding or cover essential aspects of those topics.
+6. Strictly use the given format without deviating from it.
+7. Additional notes must not exceed 500 characters.
+8. Topic must be at least 2 characters long.
+9. If mathematical content is included, format equations properly using LaTeX syntax.
+10. mathematical content add a lot of solved examples
+11. If the chunk is empty or only lists topics, create flashcards covering core aspects or key points related to those topics.
+12. Try to keep the answer concise and to the point.
+13. try to cover every thing in the chunk if possible and meet the requirements
 
 Text Chunk:
 

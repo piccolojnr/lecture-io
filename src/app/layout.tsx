@@ -6,6 +6,7 @@ import { authOptions } from "@/utils/authOptions";
 import SessionProvider from "@/providers/SessionProvider";
 import Navigation from "@/components/Navigation";
 import { Toaster } from "react-hot-toast";
+import "katex/dist/katex.min.css";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -33,11 +34,11 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
         <SessionProvider session={session}>
           <Navigation />
-          <main>{children}</main>
+          <main className="pt-16 min-h-screen">{children}</main>
           <Toaster />
         </SessionProvider>
       </body>

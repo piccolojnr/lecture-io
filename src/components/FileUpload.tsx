@@ -7,6 +7,7 @@ interface FileUploadProps {
   setError: (error: string | null) => void;
   setSelectedFile: (file: File | null) => void;
   selectedFile: File | null;
+  onTextInput: (text: string) => void; // Callback for text input
 }
 
 export default function FileUpload({
@@ -14,8 +15,10 @@ export default function FileUpload({
   setError,
   setSelectedFile,
   selectedFile,
+  onTextInput,
 }: FileUploadProps) {
   const [dragging, setDragging] = useState(false);
+  const [textContent, setTextContent] = useState("");
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -65,6 +68,12 @@ export default function FileUpload({
     }
   };
 
+  const handleTextInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setTextContent(text);
+    onTextInput(text); // Callback to pass the typed content
+  };
+
   return (
     <div>
       <div
@@ -108,6 +117,22 @@ export default function FileUpload({
             </div>
           )}
         </label>
+      </div>
+      <div className="mt-4">
+        <label
+          htmlFor="text-input"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Or type your content:
+        </label>
+        <textarea
+          id="text-input"
+          value={textContent}
+          onChange={handleTextInput}
+          rows={5}
+          className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Type your content here..."
+        />
       </div>
     </div>
   );

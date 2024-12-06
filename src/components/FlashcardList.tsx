@@ -32,24 +32,24 @@ export default function FlashcardList({ flashcards }: FlashcardListProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div
-          className="p-6 min-h-[200px] cursor-pointer"
+          className="p-4 sm:p-6 min-h-[200px] sm:min-h-[250px] cursor-pointer"
           onClick={() => setIsFlipped(!isFlipped)}
         >
-          <div className="flex justify-between text-sm text-gray-500 mb-4">
+          <div className="flex flex-col sm:flex-row justify-between text-sm text-gray-500 mb-4">
             <span>Card {currentIndex + 1} of {flashcards.length}</span>
-            <span>Click to flip</span>
+            <span className="mt-1 sm:mt-0">Click to flip</span>
           </div>
-          <div className="flex items-center justify-center h-32">
-            <p className="text-lg text-center">
+          <div className="flex items-center justify-center h-32 sm:h-40 px-2 sm:px-4">
+            <p className="text-base sm:text-lg md:text-xl text-center">
               {isFlipped ? currentFlashcard.answer : currentFlashcard.question}
             </p>
           </div>
           {currentFlashcard.additionalNotes && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-md">
-              <p className="text-sm text-gray-600">
+            <div className="mt-4 p-3 sm:p-4 bg-gray-50 rounded-md">
+              <p className="text-xs sm:text-sm text-gray-600">
                 <span className="font-medium">Note:</span> {currentFlashcard.additionalNotes}
               </p>
             </div>
@@ -57,24 +57,24 @@ export default function FlashcardList({ flashcards }: FlashcardListProps) {
         </div>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
         <button
           onClick={handlePrevious}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
         >
           Previous
         </button>
         <div className="flex space-x-2">
           <button
             onClick={() => setIsFlipped(!isFlipped)}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+            className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
           >
             {isFlipped ? 'Show Question' : 'Show Answer'}
           </button>
         </div>
         <button
           onClick={handleNext}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
         >
           Next
         </button>

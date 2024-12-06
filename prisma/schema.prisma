@@ -60,7 +60,7 @@ model Flashcard {
   id              Int          @id @default(autoincrement())
   question        String       @db.Text
   answer          String       @db.Text
-  additionalNotes String?
+  additionalNotes String?      @db.Text
   confidence      Int?         @default(0) // 0-5 scale for spaced repetition
   lastReviewed    DateTime?
   nextReview      DateTime?

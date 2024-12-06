@@ -4,7 +4,13 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pdf-parse"], // Moved from experimental to here
   reactStrictMode: true,
   images: {
-    domains: ['tailwindui.com'], // Add the hostname here
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'tailwindui.com',
+        pathname: '/**/*',
+      }, // Add the hostname here
+    ], // Add the hostname here
   },
 };
 

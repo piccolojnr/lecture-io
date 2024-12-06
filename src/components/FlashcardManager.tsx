@@ -1,10 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import StudyTimer from "./StudyTimer";
-
+import { Flashcard } from "@prisma/client";
+import Latex from "react-latex-next";
 interface FlashcardManagerProps {
   lectureId: number;
-  initialFlashcards: any[];
+  initialFlashcards: Flashcard[];
 }
 
 export default function FlashcardManager({
@@ -98,13 +99,25 @@ export default function FlashcardManager({
         >
           <div className="text-center">
             <p className="text-lg font-medium mb-4">
-              {showAnswer ? currentCard.answer : currentCard.question}
+              {showAnswer ? (
+                <Latex>{currentCard.answer}</Latex>
+              ) : (
+                currentCard.question
+              )}
             </p>
             <p className="text-sm text-gray-500">
               {showAnswer ? "Click to see question" : "Click to see answer"}
             </p>
           </div>
         </div>
+        {showAnswer && currentCard.additionalNotes && (
+          <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+            <h3 className="text-md font-semibold mb-2">Notes:</h3>
+            <p className="text-sm text-gray-700">
+              <Latex>{currentCard.additionalNotes}</Latex>
+            </p>
+          </div>
+        )}
 
         <div className="flex justify-between items-center mt-4">
           <button

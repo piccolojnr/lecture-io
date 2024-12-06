@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/utils/authOptions";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { DocumentProcessor } from "@/components/DocumentProcessor";
+// import { DocumentProcessor } from "@/components/DocumentProcessor";
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -44,7 +44,7 @@ export default async function Dashboard() {
                   Upload your lecture notes to get started
                 </p>
               </div>
-              <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+              {/* <div className="bg-white overflow-hidden shadow-sm rounded-lg">
                 <div className="px-4 py-5 sm:px-6">
                   <h2 className="text-lg font-medium text-gray-900">
                     Document Processing
@@ -53,7 +53,7 @@ export default async function Dashboard() {
                 <div className="px-4 py-5 sm:p-6">
                   <DocumentProcessor />
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Lectures Section */}
